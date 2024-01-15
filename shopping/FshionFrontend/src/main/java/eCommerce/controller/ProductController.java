@@ -1,0 +1,159 @@
+package eCommerce.controller;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.LinkedHashMap;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+
+import Ecommerce.DAO.CategoryDAO;
+import Ecommerce.DAO.ProductDAO;
+import Ecommerce.model.Category;
+import Ecommerce.model.Product;
+
+@Controller
+
+public class ProductController {
+	@Autowired
+	CategoryDAO categoryDAO;
+
+	@Autowired
+	ProductDAO productDAO;
+
+	@RequestMapping("/product")
+	public String showProduct(Model m) {
+		Product product = new Product();
+		m.addAttribute(product);
+		List<Product> listProducts = productDAO.listProduct();
+		m.addAttribute("productList", listProducts);
+		m.addAttribute("categoryList", this.getCategories());
+		m.addAttribute("pageinfo", "Manage Product");
+		return "Product";
+	}
+
+	@RequestMapping(value = "/InsertProduct", method = RequestMethod.POST)
+	public String insertProduct(@ModelAttribute("product") Product product,
+			@RequestParam("pimage") MultipartFile filedet, Model m) {
+		productDAO.addProduct(product);
+		Product product1 = new Product();
+		m.addAttribute(product1);
+		m.addAttribute("pageinfo", "Manage Product");
+		m.addAttribute("categoryList", this.getCategories());
+		String imagepath = "C:\\Users\\admin\\Desktop\\shopping\\FshionFrontend\\src\\main\\webapp\\resources\\images\\";
+		imagepath = imagepath + String.valueOf(product.getProductId() + ".jpg");
+		File image = new File(imagepath);
+		if (!filedet.isEmpty()) {
+			try {
+				byte buff[] = filedet.getBytes();
+				FileOutputStream fos = new FileOutputStream(image);
+				BufferedOutputStream bs = new BufferedOutputStream(fos);
+				bs.write(buff);
+				bs.close();
+			} catch (Exception e) {
+				m.addAttribute("errorInfo", "Excepton Occured during Image Uploading.." + e.getMessage());
+
+			}
+
+		} else {
+			m.addAttribute("errorInfo", "Problem Occured during Image Uploading:");
+		}
+		List<Product> listproducts = productDAO.listProduct();
+		m.addAttribute("productList", listproducts);
+		return "Product";
+
+	}
+
+	@RequestMapping(value = "UpdateProduct", method = RequestMethod.POST)
+	public String updateProduct(@ModelAttribute("product") Product product, Model m) {
+		productDAO.updateProduct(product);
+		Product product1 = new Product();
+		m.addAttribute(product1);
+		m.addAttribute("pageinfo", "Manage Product");
+		m.addAttribute("categoryList", this.getCategories());
+
+		List<Product> listproducts = productDAO.listProduct();
+		m.addAttribute("productList", listproducts);
+
+		return "Product";
+	}
+
+	@RequestMapping(value = "/deleteProduct/{productId}")
+	public String deleteProduct(@PathVariable("productId") int productId, Model m) {
+		Product product = productDAO.getProduct(productId);
+		productDAO.deleteProduct(product);
+		Product product1 = new Product();
+		m.addAttribute(product1);
+		m.addAttribute("pageinfo", "Manage Product");
+		m.addAttribute("categoryList", this.getCategories());
+
+		List<Product> listproducts = productDAO.listProduct();
+		m.addAttribute("productList", listproducts);
+
+		return "Product";
+
+	}
+	@RequestMapping(value = "editProduct/{productId}")
+	public String editProduct(@PathVariable("productId") int productId, Model m) {
+		Product product=productDAO.getProduct(productId);
+		m.addAttribute(product);
+		m.addAttribute("pageinfo","Manage Product");
+		m.addAttribute("categoryList",this.getCategories());
+		return "UpdateProduct";
+		
+	}
+	
+	
+	@RequestMapping(value="/totalProductDisplay/{productId}")
+	public String totalProductDisplay(@PathVariable("productId") int productId,Model m) {
+		m.addAttribute("pageinfo","Product Info");
+		Product product=productDAO.getProduct(productId);
+		m.addAttribute("Product",product);
+		return "TotalProductDisplay";
+	}
+	
+	public LinkedHashMap<Integer,String> getCategories(){
+		List<Category> listcategories=categoryDAO.listCategories();
+		LinkedHashMap<Integer,String> categoryList=new LinkedHashMap<Integer,String>();
+		for(Category category:listcategories) {
+			categoryList.put(category.getCategoryId(),category.getCategoryName());
+		}
+		return categoryList;
+	}
+	
+@RequestMapping(value="/productDisplay")
+public String displayALLProduct(Model m) {
+	m.addAttribute("pageinfo","Product Catalog");
+	List<Product> listProducts=productDAO.listProduct();
+	m.addAttribute("productList",listProducts);
+	return "ProductDisplay";
+	
+}
+
+//
+//@RequestMapping(value="/totalProductDisplay/{productId}")
+//public String totalProductDisplay1(@PathVariable("productId") int productId,Model m) {
+//	m.addAttribute("pageinfo","Product Info");
+//	Product product=productDAO.getProduct(productId);
+//	m.addAttribute("product","Product");
+//	return "TotalProductDisplay";
+//}
+//	
+//	
+	
+	
+	
+	
+	
+	
+	
+}
